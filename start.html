@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>三明治易起走｜小衍起卦登記</title>
+<style>
+:root{--felt:#e8e1d0;--ink:#29352d;--muted:#6c756d;--paper:#fffdf6;--line:#d8d0bd;--green:#315a45}
+*{box-sizing:border-box}body{margin:0;background:var(--felt);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;line-height:1.6}
+main{max-width:640px;margin:0 auto;padding:28px 18px 48px}h1{font-size:26px;margin:0 0 6px}.sub{color:var(--muted);margin:0 0 20px;font-size:15px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;margin:0 0 16px}
+.card.focus{outline:3px solid #315a45}.card h2{font-size:18px;margin:0 0 8px}.rid{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(20px,5.4vw,28px);font-weight:700;letter-spacing:1px;background:#f3eedf;border:1px dashed #b9ae95;border-radius:10px;padding:12px;text-align:center;word-break:break-all;user-select:all}
+.btn{display:inline-block;font:inherit;border:0;border-radius:10px;background:var(--green);color:#fff;padding:12px 18px;text-decoration:none;cursor:pointer;margin:8px 8px 0 0}
+.btn.secondary{background:#e5ddca;color:var(--ink)}.btn[aria-disabled="true"]{opacity:.5;pointer-events:none}
+.note{color:var(--muted);font-size:14px}.warn{background:#f5dfdc;border:1px solid #d9a49d;color:#812f27;border-radius:10px;padding:10px 12px;font-size:14px}
+.env{display:inline-block;background:#9b6b24;color:#fff;border-radius:6px;padding:2px 8px;font-size:12px;margin-left:8px;vertical-align:middle}
+ol{padding-left:22px;margin:6px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>小衍起卦登記<span id="envTag" class="env" hidden>測試環境</span></h1>
+<p class="sub">每一個想問的問題，都會有一組自己的「登記識別碼」。表單和起卦結果靠這組碼配對。</p>
+
+<section class="card">
+  <h2>你的登記識別碼</h2>
+  <div id="rid" class="rid" aria-live="polite">產生中…</div>
+  <button id="copyRid" class="btn secondary" type="button">複製識別碼</button>
+  <button id="newRid" class="btn secondary" type="button">另一個問題：產生新識別碼</button>
+  <p class="note">請截圖或抄下這組碼。換手機、用無痕視窗或清掉瀏覽器資料時，可以用它繼續。</p>
+  <p id="storageWarn" class="warn" hidden>這個瀏覽器沒辦法保存資料（可能是無痕模式）。請務必先複製或截圖上面的識別碼。</p>
+</section>
+
+<section class="card">
+  <h2>① 填寫表單</h2>
+  <p class="note">表單會自動帶入你的識別碼，請不要修改那一格。</p>
+  <a id="formLink" class="btn" href="#" target="_blank" rel="noopener" aria-disabled="true">開啟表單</a>
+  <p id="formWarn" class="warn" hidden>表單連結尚未設定（管理者請見 docs/SETUP.md）。</p>
+</section>
+
+<section class="card" id="step2">
+  <h2>② 送出表單後，開始起卦</h2>
+  <p id="backHint" class="warn" style="background:#e3eedf;border-color:#9dbb92;color:#2f5f3a" hidden>表單送出了嗎？回到這一頁就對了，你的識別碼已經記住，直接按下面的按鈕開始起卦。</p>
+  <a id="castLink" class="btn" href="index.html">前往小衍起卦</a>
+  <p class="note">起卦完成後，在結果畫面按「提交本次卦象」，六碼就會自動回填到你的表單紀錄。</p>
+</section>
+
+<section class="card">
+  <h2>在別的裝置繼續</h2>
+  <ol class="note">
+    <li>複製下面的連結，傳到要使用的裝置上打開；或</li>
+    <li>直接打開小衍起卦頁，在結果畫面輸入識別碼。</li>
+  </ol>
+  <button id="copyLink" class="btn secondary" type="button">複製「繼續起卦」連結</button>
+</section>
+</main>
+<script src="rid-core.js"></script>
+<script src="xy-storage.js"></script>
+<script src="config.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.XY_CONFIG || {}, core = window.XYCore, store = window.XYStore;
+  var $ = function (id) { return document.getElementById(id); };
+  if (C.env === 'test') $('envTag').hidden = false;
+  if (!store.storageWorks()) $('storageWarn').hidden = false;
+
+  function newRid() {
+    return core.generateRid(function (n) { var a = new Uint8Array(n); crypto.getRandomValues(a); return Array.prototype.slice.call(a); });
+  }
+  function castUrl(rid) {
+    var u = new URL('index.html', location.href);
+    u.searchParams.set('rid', core.formatRid(rid));
+    return u.toString();
+  }
+  function show(rid) {
+    store.ensure(rid);
+    store.setCurrent(rid);
+    $('rid').textContent = core.formatRid(rid);
+    $('castLink').href = castUrl(rid);
+    var link = core.buildPrefillUrl(C.formPrefillTemplate, rid);
+    if (link) { $('formLink').href = link; $('formLink').setAttribute('aria-disabled', 'false'); $('formWarn').hidden = true; }
+    else { $('formLink').href = '#'; $('formLink').setAttribute('aria-disabled', 'true'); $('formWarn').hidden = false; }
+  }
+  function copy(text, btn) {
+    var done = function () { var o = btn.textContent; btn.textContent = '已複製'; setTimeout(function () { btn.textContent = o; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { prompt('請手動複製：', text); });
+    else prompt('請手動複製：', text);
+  }
+
+  // 已有尚未收到成功回報的登記就沿用；已回報成功的不再沿用（避免同一碼被拿去問第二個問題）
+  var cur = store.getCurrent();
+  var rec = cur && store.get(cur);
+  show(cur && rec && !store.isReportedOk(rec) ? cur : newRid());
+
+  $('newRid').addEventListener('click', function () {
+    if (confirm('要為「另一個問題」產生新的識別碼嗎？\n原本的識別碼仍然有效，請記得它對應的是哪個問題。')) show(newRid());
+  });
+  // 表單在新分頁開啟；觀眾填完回到這一頁時，提示下一步，識別碼不會遺失
+  function hintBack() { $('backHint').hidden = false; $('step2').classList.add('focus'); }
+  $('formLink').addEventListener('click', function () {
+    var r = store.getCurrent(); if (r) store.advanceLocal(r, 'form_opened');
+    setTimeout(hintBack, 800);
+  });
+  document.addEventListener('visibilitychange', function () {
+    var r = store.getCurrent(), x = r && store.get(r);
+    if (!document.hidden && x && x.local === 'form_opened') hintBack();
+  });
+  (function () { var r = store.getCurrent(), x = r && store.get(r); if (x && x.local === 'form_opened') hintBack(); })();
+  $('copyRid').addEventListener('click', function () { copy($('rid').textContent, this); });
+  $('copyLink').addEventListener('click', function () { copy($('castLink').href, this); });
+})();
+</script>
+</body>
+</html>

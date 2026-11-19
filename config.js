@@ -14,5 +14,5 @@ window.XY_CONFIG = {
 
   // 【管理者設定 2】Apps Script 網頁應用程式網址（見 docs/SETUP.md 步驟 B6）
   // 例：'https://script.google.com/macros/s/XXXX/exec'
-  submitEndpoint: 'https://script.google.com/macros/s/AKfycbzAAoB1TdbzOiBRoU4AUtMAYZ5zAYH120PBOJHSokyQbawKncG6SkDreKkACBbX1tspVw/exec',
+ submitEndpoint: 'https://script.google.com/macros/s/AKfycbzAAoB1TdbzOiBRoU4AUtMAYZ5zAYH120PBOJHSokyQbawKncG6SkDreKkACBbX1tspVw/exec',
 };
